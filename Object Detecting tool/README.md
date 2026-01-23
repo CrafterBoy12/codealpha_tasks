@@ -1,4 +1,4 @@
-# Vision Tracker 
+# Object Tracker 
 **AI-Powered Real-Time Object Detection & Tracking System**
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
