@@ -26,7 +26,6 @@ These tools are designed to be beginner-friendly, easy to run, and extendable fo
 - Displays FPS and detected objects on screen
 
 ### Language Translator
-- Translate text between over 100 languages
 - Text-to-speech audio output
 - Simple GUI interface via Streamlit
 

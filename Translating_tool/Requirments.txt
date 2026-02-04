@@ -1,1 +1,2 @@
-pip freeze
+pip freezepip freeze
+pip install streamlit

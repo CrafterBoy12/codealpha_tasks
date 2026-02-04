@@ -1,10 +1,8 @@
 # PolyGlot Pro 🌐
 
-A modern **language translation web app** with **text-to-speech**, supporting 110+ languages.  
 Built using **Python** and **Streamlit**.
 
 ## Features
-- Translate text between 110+ languages
 - Text-to-speech for supported languages
 - Auto-detect source language
 - Responsive and modern UI
