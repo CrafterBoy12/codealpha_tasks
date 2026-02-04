@@ -1,197 +1,181 @@
+"""
+PolyGlot - Advanced Language Translation with Text-to-Speech
+Run: streamlit run polyglot.py
+"""
+
 import streamlit as st
 from gtts import gTTS
 from deep_translator import GoogleTranslator
 from io import BytesIO
-import time
+from datetime import datetime
 
-# ---------------------
-# Language Data
-# ---------------------
+# ---------------- LANGUAGES ---------------- #
 LANGUAGES = {
-    'af': 'Afrikaans', 'sq': 'Albanian', 'am': 'Amharic', 'ar': 'Arabic',
-    'hy': 'Armenian', 'az': 'Azerbaijani', 'eu': 'Basque', 'be': 'Belarusian',
-    'bn': 'Bengali', 'bs': 'Bosnian', 'bg': 'Bulgarian', 'ca': 'Catalan',
-    'ceb': 'Cebuano', 'zh-CN': 'Chinese (Simplified)', 'zh-TW': 'Chinese (Traditional)',
-    'co': 'Corsican', 'hr': 'Croatian', 'cs': 'Czech', 'da': 'Danish',
-    'nl': 'Dutch', 'en': 'English', 'eo': 'Esperanto', 'et': 'Estonian',
-    'fi': 'Finnish', 'fr': 'French', 'fy': 'Frisian', 'gl': 'Galician',
-    'ka': 'Georgian', 'de': 'German', 'el': 'Greek', 'gu': 'Gujarati',
-    'ht': 'Haitian Creole', 'ha': 'Hausa', 'haw': 'Hawaiian', 'he': 'Hebrew',
-    'hi': 'Hindi', 'hmn': 'Hmong', 'hu': 'Hungarian', 'is': 'Icelandic',
-    'ig': 'Igbo', 'id': 'Indonesian', 'ga': 'Irish', 'it': 'Italian',
-    'ja': 'Japanese', 'jw': 'Javanese', 'kn': 'Kannada', 'kk': 'Kazakh',
-    'km': 'Khmer', 'rw': 'Kinyarwanda', 'ko': 'Korean', 'ku': 'Kurdish',
-    'ky': 'Kyrgyz', 'lo': 'Lao', 'la': 'Latin', 'lv': 'Latvian',
-    'lt': 'Lithuanian', 'lb': 'Luxembourgish', 'mk': 'Macedonian', 'mg': 'Malagasy',
-    'ms': 'Malay', 'ml': 'Malayalam', 'mt': 'Maltese', 'mi': 'Maori',
-    'mr': 'Marathi', 'mn': 'Mongolian', 'my': 'Myanmar (Burmese)', 'ne': 'Nepali',
-    'no': 'Norwegian', 'ny': 'Nyanja (Chichewa)', 'or': 'Odia (Oriya)', 'ps': 'Pashto',
-    'fa': 'Persian', 'pl': 'Polish', 'pt': 'Portuguese', 'pa': 'Punjabi',
-    'ro': 'Romanian', 'ru': 'Russian', 'sm': 'Samoan', 'gd': 'Scots Gaelic',
-    'sr': 'Serbian', 'st': 'Sesotho', 'sn': 'Shona', 'sd': 'Sindhi',
-    'si': 'Sinhala', 'sk': 'Slovak', 'sl': 'Slovenian', 'so': 'Somali',
-    'es': 'Spanish', 'su': 'Sundanese', 'sw': 'Swahili', 'sv': 'Swedish',
-    'tl': 'Tagalog (Filipino)', 'tg': 'Tajik', 'ta': 'Tamil', 'tt': 'Tatar',
-    'te': 'Telugu', 'th': 'Thai', 'tr': 'Turkish', 'tk': 'Turkmen',
-    'uk': 'Ukrainian', 'ur': 'Urdu', 'ug': 'Uyghur', 'uz': 'Uzbek',
-    'vi': 'Vietnamese', 'cy': 'Welsh', 'xh': 'Xhosa', 'yi': 'Yiddish',
-    'yo': 'Yoruba', 'zu': 'Zulu'
+    'af': 'Afrikaans', 'ar': 'Arabic', 'bn': 'Bengali', 'zh-CN': 'Chinese (Simplified)',
+    'zh-TW': 'Chinese (Traditional)', 'cs': 'Czech', 'da': 'Danish', 'nl': 'Dutch',
+    'en': 'English', 'fi': 'Finnish', 'fr': 'French', 'de': 'German', 'el': 'Greek',
+    'hi': 'Hindi', 'hu': 'Hungarian', 'id': 'Indonesian', 'it': 'Italian', 'ja': 'Japanese',
+    'ko': 'Korean', 'ms': 'Malay', 'ne': 'Nepali', 'no': 'Norwegian', 'pl': 'Polish',
+    'pt': 'Portuguese', 'pa': 'Punjabi', 'ru': 'Russian', 'es': 'Spanish', 'sv': 'Swedish',
+    'ta': 'Tamil', 'te': 'Telugu', 'th': 'Thai', 'tr': 'Turkish', 'uk': 'Ukrainian',
+    'ur': 'Urdu', 'vi': 'Vietnamese'
 }
 
-TTS_SUPPORTED_LANGS = [
-    'af', 'ar', 'bg', 'bn', 'bs', 'ca', 'cs', 'da', 'de', 'el', 'en', 'es', 
-    'et', 'fi', 'fr', 'gu', 'hi', 'hr', 'hu', 'id', 'is', 'it', 'iw', 'ja', 
-    'jw', 'km', 'kn', 'ko', 'la', 'lv', 'ml', 'mr', 'ms', 'my', 'ne', 'nl', 
-    'no', 'pl', 'pt', 'ro', 'ru', 'si', 'sk', 'sq', 'sr', 'su', 'sv', 'sw', 
-    'ta', 'te', 'th', 'tl', 'tr', 'uk', 'ur', 'vi', 'zh-CN', 'zh-TW'
-]
-
-def is_tts_supported(lang_code):
-    return lang_code in TTS_SUPPORTED_LANGS
-
+# ---------------- FUNCTIONS ---------------- #
 def translate_text(text, source_lang, target_lang):
     try:
-        translator = GoogleTranslator(source='auto' if source_lang=='auto' else source_lang, target=target_lang)
+        translator = GoogleTranslator(source=source_lang, target=target_lang)
         return translator.translate(text), None
     except Exception as e:
         return None, str(e)
 
 def text_to_speech(text, lang):
     try:
-        tts_lang = {'zh-CN':'zh-cn','zh-TW':'zh-tw','he':'iw'}.get(lang, lang)
-        if not is_tts_supported(tts_lang):
-            return None
-        tts = gTTS(text=text, lang=tts_lang, slow=False)
-        audio_bytes = BytesIO()
-        tts.write_to_fp(audio_bytes)
-        audio_bytes.seek(0)
-        return audio_bytes.read()
-    except:
-        return None
+        tts = gTTS(text=text, lang=lang.lower())
+        audio = BytesIO()
+        tts.write_to_fp(audio)
+        audio.seek(0)
+        return audio, None
+    except Exception as e:
+        return None, str(e)
 
-# ---------------------
-# Page Config
-# ---------------------
-st.set_page_config(
-    page_title="PolyGlot Pro",
-    page_icon="🈷️",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# ---------------- PAGE CONFIG ---------------- #
+st.set_page_config(page_title="PolyGlot Translator", layout="wide", page_icon="🌐")
 
-# Custom CSS for modern look
+# ---------------- BACKGROUND & UI STYLE ---------------- #
 st.markdown("""
 <style>
-/* Gradient header */
-.main-header {
-    text-align: center;
-    font-size: 3rem;
-    font-weight: bold;
-    background: linear-gradient(to right, #6366f1, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin: 20px 0;
+body {
+    background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
-/* Translation box */
-.translation-box {
-    padding: 20px;
-    border-radius: 12px;
-    min-height: 250px;
-    font-size: 16px;
-    line-height: 1.6;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+.main {
+    background-color: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
 }
 
-/* Buttons */
-.stButton > button {
-    background-color: #6366f1;
+h1, h2, h3 {
     color: white;
-    font-weight: bold;
-    border-radius: 8px;
-    padding: 8px 20px;
+    text-align: center;
 }
-.stButton > button:hover {
-    background-color: #4f46e5;
+
+textarea {
+    border-radius: 12px !important;
+}
+
+button {
+    border-radius: 12px !important;
+    font-weight: bold !important;
+}
+
+.block-container {
+    padding-top: 2rem;
+}
+
+.card {
+    background: rgba(255,255,255,0.15);
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------
-# Header
-# ---------------------
-st.markdown("<h1 class='main-header'>PolyGlot Pro</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #9ca3af;'>Translate across 110+ languages with Text-to-Speech 🎤</p>", unsafe_allow_html=True)
-st.markdown("---")
+# ---------------- SESSION STATE ---------------- #
+if "trans_result" not in st.session_state:
+    st.session_state.trans_result = ""
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-# ---------------------
-# Language Selection
-# ---------------------
-col1, col2, col3 = st.columns([5,1,5])
+# ---------------- HEADER ---------------- #
+st.markdown("<h1>🌐 PolyGlot Translator</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#ddd;'>Translate and listen in many languages</p>", unsafe_allow_html=True)
+st.divider()
 
-with col1:
-    st.subheader("Source Language")
-    source_lang = st.selectbox("From", options=['auto'] + list(LANGUAGES.keys()),
-                               format_func=lambda x: "Auto Detect" if x=='auto' else LANGUAGES[x])
-
-with col2:
-    if st.button("🔄 Swap Languages"):
-        st.info("Swap feature placeholder")
-
-with col3:
-    st.subheader("Target Language")
-    target_lang = st.selectbox("To", options=list(LANGUAGES.keys()), 
-                               index=list(LANGUAGES.keys()).index('ur'),
-                               format_func=lambda x: LANGUAGES[x])
-
-st.markdown("---")
-
-# ---------------------
-# Text Areas
-# ---------------------
 col1, col2 = st.columns(2)
 
+# ---------- SOURCE ----------
 with col1:
-    st.markdown("### Enter Text")
-    source_text = st.text_area("", placeholder="Type your text here...", height=250)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("### 📝 Input")
 
-with col2:
-    st.markdown("### Translation")
-    translation_container = st.container()
-    if 'trans_result' not in st.session_state:
-        st.session_state.trans_result = ""
-    if st.session_state.trans_result:
-        st.markdown(f"<div class='translation-box' style='background-color:#1e293b;color:white;border:1px solid #444'>{st.session_state.trans_result}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div class='translation-box' style='background-color:#1e293b;color:#888;border:1px dashed #444;display:flex;justify-content:center;align-items:center;font-style:italic;'>Translation will appear here...</div>", unsafe_allow_html=True)
+    source_lang = st.selectbox(
+        "Choose Input language",
+        ["auto"] + list(LANGUAGES.keys()),
+        format_func=lambda x: "Auto Detect" if x == "auto" else LANGUAGES[x]
+    )
 
-# ---------------------
-# Translate Button
-# ---------------------
-col1, col2, col3 = st.columns([3,4,3])
-with col2:
-    if st.button("🚀 Translate Now"):
-        if source_text.strip():
-            progress = st.progress(0)
-            status = st.empty()
-            status.text("Translating...")
-            progress.progress(40)
-            translated, error = translate_text(source_text, source_lang, target_lang)
-            progress.progress(80)
-            if translated:
-                st.session_state.trans_result = translated
-                progress.progress(100)
-                status.text("✅ Translation Complete")
-                st.success("Translation successful!")
-                st.rerun()
-            else:
-                status.text("")
-                st.error(f"Error: {error}")
+    source_text = st.text_area(
+        "",
+        placeholder="Type or paste text here...",
+        height=220
+    )
+
+    if st.button("🔊 Listen", use_container_width=True):
+        if source_lang == "auto":
+            st.warning("Select a language for speech.")
         else:
-            st.warning("Enter text to translate")
+            audio, err = text_to_speech(source_text, source_lang)
+            if audio:
+                st.audio(audio)
+            else:
+                st.error(err)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------------------
-# Footer
-# ---------------------
-st.markdown("---")
-st.markdown("<p style='text-align:center;color:#9ca3af;'>Powered by Google Translate & Google TTS | Supports 110+ languages</p>", unsafe_allow_html=True)
+# ---------- TARGET ----------
+with col2:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("### 🌍 Translation")
+
+    target_lang = st.selectbox(
+        "Choose Translation language",
+        list(LANGUAGES.keys()),
+        format_func=lambda x: LANGUAGES[x]
+    )
+
+    st.text_area(
+        "",
+        value=st.session_state.trans_result,
+        placeholder="Translation will appear here...",
+        height=220,
+        disabled=True
+    )
+
+    if st.button("🔊 Listen to Translation", use_container_width=True):
+        if st.session_state.trans_result:
+            audio, err = text_to_speech(st.session_state.trans_result, target_lang)
+            if audio:
+                st.audio(audio)
+            else:
+                st.error(err)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ---------- TRANSLATE ----------
+st.markdown("<br>", unsafe_allow_html=True)
+if st.button("🚀 Translate", type="primary", use_container_width=True):
+    if not source_text.strip():
+        st.warning("Please enter text")
+    else:
+        translated, error = translate_text(source_text, source_lang, target_lang)
+        if translated:
+            st.session_state.trans_result = translated
+            st.session_state.history.append({
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "source_lang": "Auto" if source_lang=="auto" else LANGUAGES[source_lang],
+                "target_lang": LANGUAGES[target_lang],
+                "source": source_text,
+                "translated": translated
+            })
+            st.success("✅ Translation completed")
+            st.rerun()
+        else:
+            st.error(error)
+
+# ---------- HISTORY ----------
+if st.session_state.history:
+    with st.expander("🕘 Recent Translations"):
+        for item in reversed(st.session_state.history[-5:]):
+            st.markdown(f"**{item['source_lang']} → {item['target_lang']}**")
+            st.markdown(f"Input: {item['source']}")
+            st.markdown(f"Output: {item['translated']}")
+            st.markdown("---")
